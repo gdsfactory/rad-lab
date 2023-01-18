@@ -27,30 +27,30 @@ def main():
 
     # print(GITHUB_WORKSPACE)
 
-    modules_dir = GITHUB_WORKSPACE + '/modules'
+    modules_dir = f'{GITHUB_WORKSPACE}/modules'
 
-    for module in glob.glob(modules_dir + '/*'):
+    for module in glob.glob(f'{modules_dir}/*'):
 
         # print(module)
 
         try:
             # run the tfdoc.py
-            os.system('python3 tfdoc.py ' + module)
+            os.system(f'python3 tfdoc.py {module}')
 
         except Exception as e:
             raise SystemExit(e)
-    
+
     try: 
         # commit files
-        os.system('git config --local user.email ' + WORKFLOW_EMAIL)
-        os.system('git config --local user.name ' + WORKFLOW_USERNAME)
+        os.system(f'git config --local user.email {WORKFLOW_EMAIL}')
+        os.system(f'git config --local user.name {WORKFLOW_USERNAME}')
         os.system('git add -A')
         os.system('git commit -m "[WORKFLOW] Auto updating RAD-Lab Modules README.md" -a')
 
-        remote_repo="https://"+WORKFLOW_USERNAME+":"+WORKFLOW_PAT+"@github.com/"+GITHUB_REPOSITORY+".git"
+        remote_repo = f"https://{WORKFLOW_USERNAME}:{WORKFLOW_PAT}@github.com/{GITHUB_REPOSITORY}.git"
 
         # push changes
-        os.system('git push ' + remote_repo + ' HEAD:main --force')
+        os.system(f'git push {remote_repo} HEAD:main --force')
 
     except Exception as e:
         raise SystemExit(e)

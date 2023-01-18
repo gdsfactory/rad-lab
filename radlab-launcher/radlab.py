@@ -89,7 +89,9 @@ def main(varcontents={}, module_name=None, action=None, projid=None, tfbucket=No
 def radlabauth(currentusr):
     try:
         token = subprocess.Popen(["gcloud auth application-default print-access-token"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.read().strip().decode('utf-8')
-        r = requests.get('https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=' + token)
+        r = requests.get(
+            f'https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={token}'
+        )
         currentusr = r.json()["email"]
 
         # Setting Credentials for non Cloud Shell CLI
@@ -126,9 +128,11 @@ def radlabauth(currentusr):
             sys.exit(Fore.RED + "\nError Occured - INVALID choice.\n")
         else:
             token = subprocess.Popen(["gcloud auth application-default print-access-token"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.read().strip().decode('utf-8')
-            r = requests.get('https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=' + token)
+            r = requests.get(
+                f'https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={token}'
+            )
             currentusr = r.json()["email"]
-            os.system("gcloud config set account " + currentusr)
+            os.system(f"gcloud config set account {currentusr}")
             print(
                 "\nUser to deploy RAD Lab Modules (Selected) : " + Fore.GREEN + Style.BRIGHT + currentusr + Style.RESET_ALL)
             return currentusr
@@ -141,15 +145,12 @@ def set_proj(projid):
             select_proj = input("\nWhich Project would you like to use for RAD Lab management (Example - Creating/Utilizing GCS bucket where Terraform states will be stored) ? :" + "\n[1] Currently set project - " + Fore.GREEN + projid + Style.RESET_ALL + "\n[2] Enter a different Project ID" + Fore.YELLOW + Style.BRIGHT + "\nChoose a number for the RAD Lab management Project" + Style.RESET_ALL + ': ').strip()
             if (select_proj == '2'):
                 projid = input(Fore.YELLOW + Style.BRIGHT + "Enter the Project ID" + Style.RESET_ALL + ': ').strip()
-            elif (select_proj != '1' and select_proj != '2'):
+            elif select_proj != '1':
                 sys.exit(Fore.RED + "\nError Occured - INVALID choice.\n")
         else:
             projid = input(Fore.YELLOW + Style.BRIGHT + "\nEnter the Project ID for RAD Lab management" + Style.RESET_ALL + ': ').strip()
-    else:
-        pass
-
-    os.system("gcloud config set project " + projid)
-    os.system("gcloud auth application-default set-quota-project "  + projid )
+    os.system(f"gcloud config set project {projid}")
+    os.system(f"gcloud auth application-default set-quota-project {projid}")
     print("\nProject ID (Selected) : " + Fore.GREEN + Style.BRIGHT + projid + Style.RESET_ALL)
 
     return projid
@@ -158,13 +159,10 @@ def set_proj(projid):
 def launcherperm(projid, currentusr):
     # Hardcoded Project level required RAD Lab Launcher roles
     launcherprojroles = ['roles/storage.admin', 'roles/serviceusage.serviceUsageConsumer']
-    # Hardcoded Org level required RAD Lab Launcher roles
-    launcherorgroles = ['roles/iam.organizationRoleViewer']
-
     credentials = GoogleCredentials.get_application_default()
 
     service0 = discovery.build('cloudresourcemanager', 'v3', credentials=credentials)
-    request0 = service0.projects().getIamPolicy(resource='projects/' + projid)
+    request0 = service0.projects().getIamPolicy(resource=f'projects/{projid}')
     response0 = request0.execute()
 
     projiam = True
@@ -178,21 +176,23 @@ def launcherperm(projid, currentusr):
             # print(response0['bindings'][y]['members'])
 
             # Check for Owner role on RAD Lab Management Project
-            if (response0['bindings'][y]['role'] == 'roles/owner' and 'user:' + currentusr in response0['bindings'][y]['members']):
+            if (
+                response0['bindings'][y]['role'] == 'roles/owner'
+                and f'user:{currentusr}' in response0['bindings'][y]['members']
+            ):
                 rolefound = True
                 ownerrole = True
                 print("\n" + currentusr + " has roles/owner role for RAD Lab Management Project: " + projid)
                 break
-            # Check for Required roles on RAD Lab Management Project
             elif (response0['bindings'][y]['role'] == role):
                 rolefound = True
-                if ('user:' + currentusr not in response0['bindings'][y]['members']):
+                if (
+                    f'user:{currentusr}'
+                    not in response0['bindings'][y]['members']
+                ):
                     projiam = False
                     sys.exit(
                         Fore.RED + "\nError Occured - RADLAB LAUNCHER PERMISSION ISSUE | " + role + " permission missing...\n(Review https://github.com/GoogleCloudPlatform/rad-lab/tree/main/radlab-launcher#iam-permissions-prerequisites for more details)\n" + Style.RESET_ALL)
-                else:
-                    pass
-
         if rolefound == False:
             sys.exit(
                 Fore.RED + "\nError Occured - RADLAB LAUNCHER PERMISSION ISSUE | " + role + " permission missing...\n(Review https://github.com/GoogleCloudPlatform/rad-lab/tree/main/radlab-launcher#iam-permissions-prerequisites for more details)\n" + Style.RESET_ALL)
@@ -204,7 +204,7 @@ def launcherperm(projid, currentusr):
         print(Fore.GREEN + '\nRADLAB LAUNCHER - Project Permission check passed' + Style.RESET_ALL)
 
     service1 = discovery.build('cloudresourcemanager', 'v3', credentials=credentials)
-    request1 = service1.projects().get(name='projects/' + projid)
+    request1 = service1.projects().get(name=f'projects/{projid}')
     response1 = request1.execute()
 
     if 'parent' in response1.keys():
@@ -214,6 +214,9 @@ def launcherperm(projid, currentusr):
         response2 = request2.execute()
 
         orgiam = True
+        # Hardcoded Org level required RAD Lab Launcher roles
+        launcherorgroles = ['roles/iam.organizationRoleViewer']
+
         for role in launcherorgroles:
             rolefound = False
             for x in range(len(response2['bindings'])):
@@ -223,12 +226,12 @@ def launcherperm(projid, currentusr):
                 # print(response2['bindings'][x]['members'])
                 if (role == response2['bindings'][x]['role']):
                     rolefound = True
-                    if ('user:' + currentusr not in response2['bindings'][x]['members']):
+                    if (
+                        f'user:{currentusr}'
+                        not in response2['bindings'][x]['members']
+                    ):
                         orgiam = False
                         sys.exit(Fore.RED + "\nError Occured - RADLAB LAUNCHER PERMISSION ISSUE | " + role + " permission missing...\n(Review https://github.com/GoogleCloudPlatform/rad-lab/tree/main/radlab-launcher#iam-permissions-prerequisites for more details)\n" + Style.RESET_ALL)
-                    else:
-                        pass
-
             if rolefound == False:
                 sys.exit(Fore.RED + "\nError Occured - RADLAB LAUNCHER PERMISSION ISSUE | " + role + " permission missing...\n(Review https://github.com/GoogleCloudPlatform/rad-lab/tree/main/radlab-launcher#iam-permissions-prerequisites for more details)\n" + Style.RESET_ALL)
 
@@ -239,15 +242,14 @@ def launcherperm(projid, currentusr):
 
 
 def findorg(parent):
-    if 'folders' in parent:
-        credentials = GoogleCredentials.get_application_default()
-        s = discovery.build('cloudresourcemanager', 'v3', credentials=credentials)
-        req = s.folders().get(name=parent)
-        res = req.execute()
-        return findorg(res['parent'])
-    else:
+    if 'folders' not in parent:
         # print(Fore.GREEN + "Org identified: " + Style.BRIGHT + parent + Style.RESET_ALL)
         return parent
+    credentials = GoogleCredentials.get_application_default()
+    s = discovery.build('cloudresourcemanager', 'v3', credentials=credentials)
+    req = s.folders().get(name=parent)
+    res = req.execute()
+    return findorg(res['parent'])
 
 
 def moduleperm(projid, module_name, currentusr):

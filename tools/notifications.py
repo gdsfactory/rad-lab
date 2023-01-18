@@ -94,8 +94,7 @@ def main():
 def open_issue(GITHUB_REPOSITORY):
     print('Fetching open Issues...')
     try:
-        response = requests.get('https://api.github.com/repos/'+ GITHUB_REPOSITORY +'/issues')
-        return response
+        return requests.get(f'https://api.github.com/repos/{GITHUB_REPOSITORY}/issues')
     except requests.exceptions.RequestException as e: 
         raise SystemExit(e)    
 
@@ -103,7 +102,9 @@ def issuecommentcheck(GITHUB_REPOSITORY, number):
     print('Checking if the notification has already been sent...')
     try:
         status = False
-        response = requests.get('https://api.github.com/repos/'+ GITHUB_REPOSITORY +'/issues/'+ str(number) +'/comments')
+        response = requests.get(
+            f'https://api.github.com/repos/{GITHUB_REPOSITORY}/issues/{str(number)}/comments'
+        )
         for comment in response.json():
             body = comment['body']
             if(body.startswith('<!-- Notification Check -->')):
@@ -120,8 +121,8 @@ def setdata(header, number, title, user, labels, assignees, url):
         "cards": [
             {
                 "header": {
-                    "title": header + " Tracker",
-                    "subtitle": header + " No: #"+number
+                    "title": f"{header} Tracker",
+                    "subtitle": f"{header} No: #{number}",
                 },
                 "sections": [
                     {
@@ -129,44 +130,42 @@ def setdata(header, number, title, user, labels, assignees, url):
                             {
                                 "keyValue": {
                                     "topLabel": "Creator",
-                                    "content": user
+                                    "content": user,
                                 },
                             },
                             {
                                 "keyValue": {
                                     "topLabel": "Title",
-                                    "content": title
+                                    "content": title,
                                 }
                             },
                             {
                                 "keyValue": {
                                     "topLabel": "Assigned Lables",
-                                    "content": "- " + labels
+                                    "content": f"- {labels}",
                                 }
                             },
                             {
                                 "keyValue": {
                                     "topLabel": "Assignees",
-                                    "content": "- " + assignees
+                                    "content": f"- {assignees}",
                                 }
                             },
                             {
                                 "buttons": [
                                     {
                                         "textButton": {
-                                            "text": "OPEN " + header,
+                                            "text": f"OPEN {header}",
                                             "onClick": {
-                                                "openLink": {
-                                                    "url": url
-                                                }
-                                            }
+                                                "openLink": {"url": url}
+                                            },
                                         }
                                     }
                                 ]
-                            }
+                            },
                         ]
                     }
-                ]
+                ],
             }
         ]
     }
@@ -193,8 +192,12 @@ def commentissue(GITHUB_REPOSITORY, number, comment, TOKEN):
     # print(comment)
     data = {"body":comment}
     try:
-        response  = requests.post('https://api.github.com/repos/'+ GITHUB_REPOSITORY +'/issues/'+ str(number) +'/comments', data=json.dumps(data), headers=headers)
-        # print(response.text)
+        response = requests.post(
+            f'https://api.github.com/repos/{GITHUB_REPOSITORY}/issues/{str(number)}/comments',
+            data=json.dumps(data),
+            headers=headers,
+        )
+            # print(response.text)
     except requests.exceptions.RequestException as e: 
         raise SystemExit(e)
 
