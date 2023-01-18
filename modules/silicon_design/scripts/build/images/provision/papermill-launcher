@@ -21,8 +21,5 @@ def expand_path(p):
 _, input_path, output_path, *params_args = sys.argv
 input_path = expand_path(input_path)
 output_path = expand_path(output_path)
-parameters = dict(
-    (k, expand_path(v))
-    for k, v in args(params_args)
-)
+parameters = {k: expand_path(v) for k, v in args(params_args)}
 pm.execute_notebook(input_path, output_path, parameters=parameters, progress_bar=False)

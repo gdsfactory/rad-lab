@@ -25,37 +25,43 @@ def main():
 
     # List existing RADLab Modules
     module = list_modules()
-    
-    sc_path = os.getcwd() + '/radlab-service-catalog'
+
+    sc_path = f'{os.getcwd()}/radlab-service-catalog'
 
     # Creating RadLab Service Catalog Package folder
-    os.system('mkdir -p ' + sc_path)
+    os.system(f'mkdir -p {sc_path}')
 
     # Pull specific folder from RADLab GitHub Repo
-    shutil.copytree(os.path.dirname(os.getcwd()) + '/modules/'+ module, sc_path + '/' + module)
+    shutil.copytree(
+        f'{os.path.dirname(os.getcwd())}/modules/{module}',
+        f'{sc_path}/{module}',
+    )
 
-    for filename in os.listdir(sc_path + '/' + module):
+    for filename in os.listdir(f'{sc_path}/{module}'):
 
-        f = os.path.join(sc_path + '/' + module, filename)
+        f = os.path.join(f'{sc_path}/{module}', filename)
 
         # Remove all non.tf files from the root of the module
         if os.path.isfile(f) and os.path.splitext(f)[1] != ".tf":
             os.remove(f)
 
     # Zip the module in such a way that .tf files are at the root of the zipped file
-    os.system('cd ' + sc_path + '/' + module + '; zip -r ' + module + '.zip *')
+    os.system(f'cd {sc_path}/{module}; zip -r {module}.zip *')
 
     # Move thezip package to the RADLab Service Catalog Folder
-    os.system('mv ' + sc_path + '/' + module + '/' + module + '.zip ' + sc_path )
+    os.system(f'mv {sc_path}/{module}/{module}.zip {sc_path}')
 
     # Remove the downloaded module
-    os.system('rm -r ' + sc_path + '/' + module)
+    os.system(f'rm -r {sc_path}/{module}')
 
     # Printing path to RADLab's Service Catalog Solution.
-    print("Please find the zipped solution here: " + sc_path + '/' + module +'.zip')
+    print(f"Please find the zipped solution here: {sc_path}/{module}.zip")
 
 def list_modules():
-    modules = [s.replace(os.path.dirname(os.getcwd()) + '/modules/', "") for s in glob.glob(os.path.dirname(os.getcwd()) + '/modules/*')]
+    modules = [
+        s.replace(f'{os.path.dirname(os.getcwd())}/modules/', "")
+        for s in glob.glob(f'{os.path.dirname(os.getcwd())}/modules/*')
+    ]
     modules = sorted(modules)
     c = 1
     print_list = ''
@@ -65,11 +71,17 @@ def list_modules():
         first_line = ''
         # Fetch Module name
         try:
-            with open(os.path.dirname(os.getcwd()) + '/modules/'+ module + '/README.md', "r") as file:
+            with open(f'{os.path.dirname(os.getcwd())}/modules/{module}/README.md', "r") as file:
                 first_line = file.readline()
         except:
-            print(Fore.RED +'Missing README.md file for module: ' + module + Style.RESET_ALL)
-        print_list = print_list + "["+ str(c) +"] " + first_line.strip() + Fore.GREEN + " (" +module + ")\n" + Style.RESET_ALL
+            print(
+                f'{Fore.RED}Missing README.md file for module: {module}{Style.RESET_ALL}'
+            )
+        print_list = (
+            f"{print_list}[{str(c)}] {first_line.strip()}{Fore.GREEN} ({module}"
+            + ")\n"
+            + Style.RESET_ALL
+        )
         c = c+1
 
     # Selecting Module
